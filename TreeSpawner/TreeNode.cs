@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class TreeNode
@@ -25,5 +23,10 @@ public class TreeNode
         doorL = room.doorL;
         doorF = room.doorF;
         doorR = room.doorR;
+    }
+
+    public override string ToString()
+    {
+        return room + ", L: " + doorL+ ", F: " + doorF+ ", R: " + doorR;
     }
 }

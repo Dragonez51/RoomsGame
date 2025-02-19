@@ -1,12 +1,10 @@
-using System.Collections;
-using System.Collections.Generic;
-using System.ComponentModel.Design.Serialization;
 using UnityEngine;
 
 public class TreeBasedSpawner : MonoBehaviour 
 {
 
     [SerializeField] int roomAmount;
+    [SerializeField] float roomScale;
 
     [SerializeField] private GameObject room0;
     [SerializeField] private GameObject roomL;
@@ -26,6 +24,9 @@ public class TreeBasedSpawner : MonoBehaviour
 
     void Start()
     {
+
+        roomOffset *= roomScale;
+
         Room0 = new Room(room0, false, false, false);
 
         RoomL = new Room(roomL, true, false, false);
@@ -42,24 +43,27 @@ public class TreeBasedSpawner : MonoBehaviour
 
         generateMap();
 
-        map.spawnAll();
+        map.backtrack(Room0, roomOffset);
+        //map.printAll();
+
+        map.spawnAll(roomScale);
     }
 
     private void generateMap()
     {
         int roomCount = 2;
-
         int forward = 0;
         int right = 0;
-
         int nextRotation = 0;
 
-        TreeNode firstRoom = new TreeNode(Room0, new Vector3(transform.position.x, transform.position.y, transform.position.z), 2);
-        map.add(firstRoom);
-        //map.setFirstRoom(firstRoom);
+        bool doorL = false;
+        bool doorF = false; 
+        bool doorR = false;
 
+        TreeNode firstRoom = new TreeNode(Room0, new Vector3(transform.position.x, transform.position.y, transform.position.z), 2);
         TreeNode generatedRoom = new TreeNode(rooms[Random.Range(1, 8)], new Vector3(firstRoom.position.x, firstRoom.position.y, firstRoom.position.z + roomOffset), 0);
-        map.add(generatedRoom);
+
+        map.addStartingRooms(firstRoom, generatedRoom);
 
         Room currentRoom;
 
@@ -81,6 +85,8 @@ public class TreeBasedSpawner : MonoBehaviour
 
                 if (currentRotation <= -2) { nextRotation = 1; }
                 else { nextRotation = currentRotation - 1; }
+
+                doorL = true;
             }
             else if (currentRoom == RoomF)
             {
@@ -90,6 +96,8 @@ public class TreeBasedSpawner : MonoBehaviour
                 else if (currentRotation == 1) { right = 1; }
 
                 nextRotation = currentRotation;
+
+                doorF = true;
             }
             else if (currentRoom == RoomR)
             {
@@ -100,6 +108,8 @@ public class TreeBasedSpawner : MonoBehaviour
 
                 if (currentRotation >= 2) { nextRotation = -1; }
                 else { nextRotation = currentRotation + 1; }
+
+                doorR = true;
             }
             else if (currentRoom == RoomLF)
             {
@@ -112,6 +122,8 @@ public class TreeBasedSpawner : MonoBehaviour
 
                     if (currentRotation <= -2) { nextRotation = 1; }
                     else { nextRotation = currentRotation - 1; }
+
+                    doorL = true;
                 }
                 else if (generatedRoom.doorF)
                 {
@@ -121,6 +133,8 @@ public class TreeBasedSpawner : MonoBehaviour
                     else if (currentRotation == 1) { right = 1; }
 
                     nextRotation = currentRotation;
+
+                    doorF = true;
                 }
             }
             else if (currentRoom == RoomFR)
@@ -133,6 +147,8 @@ public class TreeBasedSpawner : MonoBehaviour
                     else if (currentRotation == 1) { right = 1; }
 
                     nextRotation = currentRotation;
+
+                    doorF = true;
                 }
                 else if(generatedRoom.doorR)
                 {
@@ -143,6 +159,8 @@ public class TreeBasedSpawner : MonoBehaviour
 
                     if (currentRotation >= 2) { nextRotation = -1; }
                     else { nextRotation = currentRotation + 1; }
+
+                    doorR = true;
                 }
             }
             else if (currentRoom == RoomLR) 
@@ -156,6 +174,8 @@ public class TreeBasedSpawner : MonoBehaviour
 
                     if (currentRotation <= -2) { nextRotation = 1; }
                     else { nextRotation = currentRotation - 1; }
+
+                    doorL = true;
                 }
                 else if(generatedRoom.doorR)
                 {
@@ -166,6 +186,8 @@ public class TreeBasedSpawner : MonoBehaviour
 
                     if (currentRotation >= 2) { nextRotation = -1; }
                     else { nextRotation = currentRotation + 1; }
+
+                    doorR = true;
                 }
             }
             else
@@ -179,6 +201,8 @@ public class TreeBasedSpawner : MonoBehaviour
 
                     if (currentRotation <= -2) { nextRotation = 1; }
                     else { nextRotation = currentRotation - 1; }
+
+                    doorL = true;
                 }
                 else if (generatedRoom.doorF)
                 {
@@ -188,6 +212,8 @@ public class TreeBasedSpawner : MonoBehaviour
                     else if (currentRotation == 1) { right = 1; }
 
                     nextRotation = currentRotation;
+
+                    doorF = true;
                 }
                 else if(generatedRoom.doorR)
                 {
@@ -198,6 +224,8 @@ public class TreeBasedSpawner : MonoBehaviour
 
                     if (currentRotation >= 2) { nextRotation = -1; }
                     else { nextRotation = currentRotation + 1; }
+
+                    doorR = true;
                 }
             }
 
@@ -216,19 +244,29 @@ public class TreeBasedSpawner : MonoBehaviour
                 {
                     generatedRoom.doorL = false;
 
+                    doorL = false;
+                    doorF = false;
+                    doorR = false;
+
                     continue;
                 }
                 else if (generatedRoom.doorF)
                 {
                     generatedRoom.doorF = false;
 
-                    nextRotation = 0;
+                    doorL = false;
+                    doorF = false;
+                    doorR = false;
 
                     continue;
                 }
                 else if (generatedRoom.doorR)
                 {
                     generatedRoom.doorR = false;
+
+                    doorL = false;
+                    doorF = false;
+                    doorR = false;
 
                     continue;
                 }
@@ -238,14 +276,39 @@ public class TreeBasedSpawner : MonoBehaviour
 
                     if (generatedRoom == firstRoom) { return; }
 
+                    doorL = false;
+                    doorF = false;
+                    doorR = false;
+
                     continue;
                 }
                 
             }
 
+            TreeNode lastRoom = generatedRoom;
+
             generatedRoom = new TreeNode(rooms[Random.Range(1, 8)], newPosition, nextRotation);
 
-            map.add(generatedRoom);
+            if (doorL)
+            {
+                map.addAfter(lastRoom, generatedRoom, 'L');
+            }
+            else if (doorF)
+            {
+                map.addAfter(lastRoom, generatedRoom, 'F');
+            }
+            else if (doorR)
+            {
+                map.addAfter(lastRoom, generatedRoom, 'R');
+            }
+            else 
+            {
+                Debug.Log("no info on which door to spawn!");
+            }
+
+            doorL = false;
+            doorF = false;
+            doorR = false;
 
             nextRotation = 0;
 
